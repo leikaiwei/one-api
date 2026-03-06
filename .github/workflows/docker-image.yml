@@ -2,6 +2,7 @@ name: Publish Docker image
 
 on:
   push:
+    # 仅在语义化版本标签触发发布（例如 v1.2.3）
     tags:
       - 'v*.*.*'
   workflow_dispatch:
@@ -11,6 +12,9 @@ on:
         required: false
 jobs:
   push_to_registries:
+    env:
+      # 支持优先从仓库变量读取 Docker Hub 仓库名，也兼容使用同名 secret
+      DOCKERHUB_REPOSITORY: ${{ vars.DOCKERHUB_REPOSITORY || secrets.DOCKERHUB_REPOSITORY }}
     name: Push Docker image to multiple registries
     runs-on: ubuntu-latest
     permissions:
@@ -55,7 +59,9 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ${{ contains(github.ref, 'alpha') && 'justsong/one-api-alpha' || 'justsong/one-api' }}
+            # Docker Hub 镜像仓库改为可配置，不再硬编码 justsong/one-api
+            ${{ contains(github.ref, 'alpha') && format('{0}-alpha', env.DOCKERHUB_REPOSITORY) || env.DOCKERHUB_REPOSITORY }}
+            # 同时保留 GHCR 的仓库路径
             ${{ contains(github.ref, 'alpha') && format('ghcr.io/{0}-alpha', github.repository) || format('ghcr.io/{0}', github.repository) }}
 
       - name: Build and push Docker images
