@@ -153,9 +153,9 @@ const SystemSetting = () => {
 
 
   const submitEmailDomainWhitelist = async () => {
+    // 仅在白名单变化时提交，避免被无关字段（如 SMTPToken）误阻断保存。
     if (
-      originInputs['EmailDomainWhitelist'] !== inputs.EmailDomainWhitelist.join(',') &&
-      inputs.SMTPToken !== ''
+      originInputs['EmailDomainWhitelist'] !== inputs.EmailDomainWhitelist.join(',')
     ) {
       await updateOption('EmailDomainWhitelist', inputs.EmailDomainWhitelist.join(','));
     }

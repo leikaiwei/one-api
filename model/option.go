@@ -101,6 +101,7 @@ func SyncOptions(frequency int) {
 }
 
 func UpdateOption(key string, value string) error {
+	// 先落库再更新内存，确保配置在重启后仍然生效。
 	// Save to database first
 	option := Option{
 		Key: key,
@@ -157,7 +158,17 @@ func updateOptionMap(key string, value string) (err error) {
 	}
 	switch key {
 	case "EmailDomainWhitelist":
-		config.EmailDomainWhitelist = strings.Split(value, ",")
+		// 对邮箱域名白名单做规范化处理：去空格、去空值，避免出现 [""] 这种无效配置。
+		domains := strings.Split(value, ",")
+		normalizedDomains := make([]string, 0, len(domains))
+		for _, domain := range domains {
+			domain = strings.TrimSpace(domain)
+			if domain == "" {
+				continue
+			}
+			normalizedDomains = append(normalizedDomains, domain)
+		}
+		config.EmailDomainWhitelist = normalizedDomains
 	case "SMTPServer":
 		config.SMTPServer = value
 	case "SMTPPort":
